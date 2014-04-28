@@ -1,0 +1,93 @@
+component: ParticleInTree
+
+namespace: particles::pidt
+
+vertex:
+  dastgen-file: Vertex.def
+  
+cell:
+  dastgen-file: Cell.def
+
+state:
+  dastgen-file: ../State.def
+
+event-mapping:
+  name: RandomParticleDistribution
+
+event-mapping:
+  name: PlotParticles
+
+event-mapping:
+  name: PlotDualGrid
+
+event-mapping:
+  name: AdoptGrid
+
+event-mapping:
+  name: DropParticles
+
+event-mapping:
+  name: LiftParticles
+
+event-mapping:
+  name: InitGrid
+
+event-mapping:
+  name: Nop
+
+event-mapping:
+  name: MoveParticles
+ 
+event-mapping:
+  name: Redistribute
+
+adapter:
+  name: Nop
+  merge-with-user-defined-mapping: Nop
+
+adapter:
+  name: InitGrid
+  merge-with-user-defined-mapping: InitGrid
+
+adapter:
+  name: InitGridAndPlot
+  merge-with-user-defined-mapping: InitGrid
+  merge-with-predefined-mapping: VTKMultilevelGridVisualiser(multilevelinitgrid)
+  merge-with-predefined-mapping: VTKGridVisualiser(initgrid)
+ 
+adapter:
+  name: SetupExperimentWithRandomParticleDistribution
+  merge-with-user-defined-mapping: RandomParticleDistribution
+  merge-with-user-defined-mapping: InitGrid
+  merge-with-user-defined-mapping: Redistribute
+
+adapter:
+  name: SetupExperimentWithRandomParticleDistributionAndPlot
+  merge-with-user-defined-mapping: RandomParticleDistribution
+  merge-with-user-defined-mapping: InitGrid
+  merge-with-user-defined-mapping: PlotParticles
+  merge-with-user-defined-mapping: PlotDualGrid
+  merge-with-user-defined-mapping: Redistribute
+  merge-with-predefined-mapping: VTKGridVisualiser(startgrid)
+  merge-with-predefined-mapping: VTKMultilevelGridVisualiser(multilevelstartgrid)
+
+adapter:
+  name: MoveParticles
+  merge-with-user-defined-mapping: DropParticles
+  merge-with-user-defined-mapping: MoveParticles
+  merge-with-user-defined-mapping: AdoptGrid
+  merge-with-user-defined-mapping: LiftParticles
+  merge-with-user-defined-mapping: Redistribute
+
+adapter:
+  name: MoveParticlesAndPlot
+  merge-with-user-defined-mapping: DropParticles
+  merge-with-user-defined-mapping: MoveParticles
+  merge-with-user-defined-mapping: PlotParticles
+  merge-with-user-defined-mapping: PlotDualGrid
+  merge-with-user-defined-mapping: AdoptGrid
+  merge-with-user-defined-mapping: LiftParticles
+  merge-with-user-defined-mapping: Redistribute
+  merge-with-predefined-mapping: VTKGridVisualiser(grid)
+  merge-with-predefined-mapping: VTKMultilevelGridVisualiser(multilevelgrid)
+  

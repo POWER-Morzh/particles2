@@ -1,0 +1,25 @@
+#include "particles/Particles.h"
+
+
+Packed-Type: short int;
+
+
+Constant: MaxLevels;
+
+
+
+class particles::dastgen::State {
+  persistent parallelise int     minimalNumberOfParticlesPerCell;
+  persistent parallelise double  timeStepSize;
+  persistent parallelise double  maximalNumberOfInitialParticlesPerUnitVolume;
+  persistent parallelise double  maximalInitialVelocity;
+  persistent parallelise double  breakingDamWidth;
+  
+  persistent parallelise double  numberOfLifts;
+  persistent parallelise double  numberOfParticlesInLeaves;
+  persistent parallelise double  liftsPerLevel[MaxLevels];
+  persistent parallelise double  accumulatedDensity;
+  persistent parallelise double  nonEmptyLeaves;
+  
+  persistent parallelise double  particlesSentToMaster;
+};

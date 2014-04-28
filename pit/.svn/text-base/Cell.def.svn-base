@@ -1,0 +1,7 @@
+Packed-Type: short int;
+
+
+class particles::pit::dastgen::Cell {
+  persistent int              cellIndex;
+  discard    parallelise int  numberOfParticlesInChildren;
+};

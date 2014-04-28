@@ -1,0 +1,9 @@
+Packed-Type: short int;
+
+Constant: DIMENSIONS;
+
+class particles::pit::dastgen::Cell {
+  persistent int              cellIndex;
+  discard    parallelise int  numberOfParticlesInChildren;
+  discard    double  meanVelocity[DIMENSIONS];
+};

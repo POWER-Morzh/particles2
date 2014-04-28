@@ -1,0 +1,6 @@
+// This file is part of the Peano project. For conditions of distribution and
+// use, please see the copyright notice at www.peano-framework.org
+class particles::pit::records::RepositoryState { 
+  enum Action { WriteCheckpoint, ReadCheckpoint, Terminate, RunOnAllNodes,UseAdapterNop,UseAdapterInitGrid,UseAdapterInitGridAndPlot,UseAdapterSetupExperimentWithRandomParticleDistribution,UseAdapterSetupExperimentWithRandomParticleDistributionAndPlot,UseAdapterMoveParticles,UseAdapterMoveParticlesAndPlot,NumberOfAdapters};
+  persistent parallelise Action action;
+};

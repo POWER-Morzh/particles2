@@ -1,0 +1,8 @@
+Packed-Type: short int;
+
+
+class particles::pidt::dastgen::Vertex {  
+  discard parallelise int  numberOfAdjacentEraseTriggers;
+  discard bool             particlesAddedToThisCell;
+  persistent int           vertexIndex;
+};

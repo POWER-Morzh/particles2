@@ -1,0 +1,157 @@
+template <class StateData>
+particles::State<StateData>::State():
+  Base() { 
+}
+
+
+template <class StateData>
+particles::State<StateData>::State(const typename Base::PersistentState& argument):
+  Base(argument) {
+}
+
+
+template <class StateData>
+void particles::State<StateData>::init(
+  int     minimalNumberOfParticlesPerCell,
+  double  timeStepSize,
+  double  maximalNumberOfInitialParticlesPerUnitVolume,
+  double  maximalInitialVelocity,
+  double  breakingDamWidth
+) {
+  Base::_stateData.setMinimalNumberOfParticlesPerCell(minimalNumberOfParticlesPerCell);
+  Base::_stateData.setTimeStepSize(timeStepSize);
+  Base::_stateData.setMaximalNumberOfInitialParticlesPerUnitVolume(maximalNumberOfInitialParticlesPerUnitVolume);
+  Base::_stateData.setMaximalInitialVelocity(maximalInitialVelocity);
+  Base::_stateData.setBreakingDamWidth(breakingDamWidth);
+}
+
+
+template <class StateData>
+int particles::State<StateData>::getMinimalNumberOfParticlesPerCell() const {
+  return Base::_stateData.getMinimalNumberOfParticlesPerCell();
+}
+
+
+template <class StateData>
+double particles::State<StateData>::getMaximalNumberOfInitialParticlesPerUnitVolume() const {
+  assertion1( Base::_stateData.getMaximalNumberOfInitialParticlesPerUnitVolume()>=0.0, Base::toString() );
+  return Base::_stateData.getMaximalNumberOfInitialParticlesPerUnitVolume();
+}
+
+
+template <class StateData>
+double particles::State<StateData>::getMaximalInitialVelocity() const {
+  return Base::_stateData.getMaximalInitialVelocity();
+}
+
+
+template <class StateData>
+double particles::State<StateData>::getTimeStepSize() const {
+  return Base::_stateData.getTimeStepSize();
+}
+
+
+template <class StateData>
+double particles::State<StateData>::getBreakingDamWidth() const {
+  return Base::_stateData.getBreakingDamWidth();
+}
+
+
+template <class StateData>
+void particles::State<StateData>::incNumberOfLifts(int level, double increment) {
+  assertion2(level<MaxLevels,level,MaxLevels);
+  Base::_stateData.setNumberOfLifts( Base::_stateData.getNumberOfLifts()+increment );
+  Base::_stateData.setLiftsPerLevel(level, Base::_stateData.getLiftsPerLevel(level)+increment );
+}
+
+
+template <class StateData>
+void particles::State<StateData>::reduceStateStatistics( const State& remoteState ) {
+  Base::_stateData.setNumberOfLifts(             Base::_stateData.getNumberOfLifts()             + remoteState.Base::_stateData.getNumberOfLifts() );
+  Base::_stateData.setNumberOfParticlesInLeaves( Base::_stateData.getNumberOfParticlesInLeaves() + remoteState.Base::_stateData.getNumberOfParticlesInLeaves() );
+  Base::_stateData.setLiftsPerLevel(             Base::_stateData.getLiftsPerLevel()             + remoteState.Base::_stateData.getLiftsPerLevel() );
+  Base::_stateData.setAccumulatedDensity(        Base::_stateData.getAccumulatedDensity()        + remoteState.Base::_stateData.getAccumulatedDensity() );
+  Base::_stateData.setNonEmptyLeaves(            Base::_stateData.getNonEmptyLeaves()            + remoteState.Base::_stateData.getNonEmptyLeaves() );
+  Base::_stateData.setParticlesSentToMaster(     Base::_stateData.getParticlesSentToMaster()     + remoteState.Base::_stateData.getParticlesSentToMaster());
+}
+
+
+template <class StateData>
+void particles::State<StateData>::clearStatistics() {
+  Base::_stateData.setNumberOfLifts( 0.0 );
+  Base::_stateData.setNumberOfParticlesInLeaves( 0.0 );
+  Base::_stateData.setLiftsPerLevel( 0.0 );
+  Base::_stateData.setAccumulatedDensity( 0.0 );
+  Base::_stateData.setNonEmptyLeaves( 0.0 );
+  Base::_stateData.setParticlesSentToMaster( 0.0 );
+}
+
+
+template <class StateData>
+double particles::State<StateData>::getNumberOfSendsToMaster() const {
+  return Base::_stateData.getParticlesSentToMaster();
+}
+
+
+template <class StateData>
+void particles::State<StateData>::incNumberOfSendsToMaster( int numberOfParticles ) {
+  Base::_stateData.setParticlesSentToMaster( Base::_stateData.getParticlesSentToMaster() + numberOfParticles );
+}
+
+
+template <class StateData>
+void particles::State<StateData>::updateParticleStatisticsInLeaf(
+  double                                       numberOfParticles,
+  const tarch::la::Vector<DIMENSIONS,double>&  cellSize
+) {
+  Base::_stateData.setNumberOfParticlesInLeaves(
+    Base::_stateData.getNumberOfParticlesInLeaves() +
+    numberOfParticles
+  );
+  Base::_stateData.setAccumulatedDensity(
+    Base::_stateData.getAccumulatedDensity() +
+     numberOfParticles / tarch::la::volume(cellSize)
+  );
+  if (numberOfParticles>0) {
+    Base::_stateData.setNonEmptyLeaves(
+      Base::_stateData.getNonEmptyLeaves() +
+      1.0
+    );
+  }
+}
+
+
+template <class StateData>
+double particles::State<StateData>::getTotalNumberOfLifts() const {
+  return Base::_stateData.getNumberOfLifts();
+}
+
+
+template <class StateData>
+double particles::State<StateData>::getNumberOfParticles() const {
+  return Base::_stateData.getNumberOfParticlesInLeaves();
+}
+
+
+template <class StateData>
+double particles::State<StateData>::getMeanParticleDensityInNonEmptyCells() const {
+  return Base::_stateData.getNonEmptyLeaves()==0.0 ? 0.0 : Base::_stateData.getAccumulatedDensity() / Base::_stateData.getNonEmptyLeaves();
+}
+
+
+template <class StateData>
+double particles::State<StateData>::getAverageParticlesPerCell() const {
+  return Base::_stateData.getNumberOfInnerLeafCells()==0.0 ? 0.0 : Base::_stateData.getNumberOfParticlesInLeaves() / Base::_stateData.getNumberOfInnerLeafCells();
+}
+
+
+template <class StateData>
+double particles::State<StateData>::getNumberOfNonEmptyLeaves() const {
+  return Base::_stateData.getNonEmptyLeaves();
+}
+
+
+template <class StateData>
+double particles::State<StateData>::getNumberOfLifts(int level) const {
+  return Base::_stateData.getLiftsPerLevel(level);
+}

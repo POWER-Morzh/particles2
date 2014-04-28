@@ -1,0 +1,7 @@
+Packed-Type: short int;
+
+
+class particles::pidt::dastgen::Cell {
+  discard    parallelise int     numberOfParticlesInChildren;
+  persistent parallelise double  maxVComponent;
+};

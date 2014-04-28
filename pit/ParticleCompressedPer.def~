@@ -1,0 +1,14 @@
+#include "peano/utils/Globals.h"
+
+
+Packed-Type: short int;
+
+
+Constant: DIMENSIONS;
+
+
+class particles::pit::records::ParticleCompressedPer {
+  persistent expose parallelise packed int myInteger[2] from 0 to 7;
+  persistent expose parallelise double  x[DIMENSIONS];
+  persistent expose parallelise packed double  v[DIMENSIONS];
+};

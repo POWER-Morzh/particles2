@@ -1,0 +1,74 @@
+/**
+ 
+ @dir "Particles in Peano"
+ 
+ The present page introduces two patterns how to realise particles in Peano. 
+ Most of this work is based upon ideas of Bart Verleye (KU Leuven) and Kristof 
+ Unterweger (TUM) who used similar algorithms for PiC codes or hyperbolic 
+ patch-based solvers, respectively. The respective papers describing the 
+ fundamental ideas are
+ 
+ \code
+ B. Verleye, B. Reps, D. Roose, and T. Weinzierl: Particle-in-Cell Realisations On Spacetrees. to be submitted (2013)
+ K. Unterweger, T. Weinzierl, D. Ketcheson, A. Ahmadia: PeanoClaw---A Functionally-Decomposed Approach to Adaptive Mesh Refinement with Local Time Stepping for Hyperbolic Conservation Law Solvers. Technical Report, Technische Universitaet Muenchen (2013)
+ \endcode
+  
+ !! Technical principles
+ 
+ Both realisations rely on a simple particle definition where a particle is a 
+ @f$ 2d @f$ tuple describing its position and its velocity. For one relisation 
+ variant, we need some additional meta data.
+ 
+ While the particle is modeled with DaStGen (which simplifies the MPI 
+ handling), we mark all attributes to be public. This way, we avoid an 
+ overhead due to setters and getters and facilitate the usage of simd for 
+ particle operations. In the end, both realisation patterns will implement 
+ an Array-of-Structs (AoS) pattern, i.e. either we associate lists of 
+ instances of the particle to the vertices or cells.
+ 
+ To store these lists in turn, we use hash tables that we call heap. The 
+ map's key is stored in the vertices or cells, respectively. Other realisation 
+ variants of the heap or even a container where each grid entity holds start 
+ and end position within a continuous particle sequence might work as well. 
+ 
+ The particle implementation is well-suited for SSE/AVX vectorisation. 
+ Therefore, we use the $--align$ argument with DaStGen. For further details on this, please 
+ consult the documentation of peano::heap.
+ 
+ There are two different variants of particle schemes. We either store the 
+ particles directly in the cells of Peano's spacetree (particle-in-tree, pit) 
+ or we store the particles in the vertices, i.e. on the dual grid 
+ (particle-in-dual-tree, pidt). The lattter variant requires an additional 
+ boolean flag per particle. Therefore, we cannot use the same particle definition 
+ for both codes. 
+ 
+ !! Particle in Tree
+ 
+ To regenerate the pit example, please call
+ \code
+ java -jar ../../pdt/lib/DaStGen.jar --plugin PeanoHeapSnippetGenerator --naming PeanoHeapNameTranslator --align pit/Particle.def   pit/records
+ java -jar ../../pdt/pdt.jar pit/pit.peano-specification pit ../../pdt/usrtemplates
+ \endcode
+ from the particles directory. 
+  
+
+ !! Particle in Dual Tree
+
+ To regenerate the pit example, please call
+ \code
+ java -jar ../../pdt/lib/DaStGen.jar --plugin PeanoHeapSnippetGenerator --naming PeanoHeapNameTranslator --align pidt/Particle.def  pidt/records
+ java -jar ../../pdt/pdt.jar pidt/pidt.peano-specification pidt ../../pdt/usrtemplates
+ \endcode
+ from the particles directory. 
+
+
+ !!! Create tar file with all data
+ 
+ Change into the projects directory and type in
+ \code
+  tar -cvf particles.tar particles --exclude=.svn --exclude=experiments
+  gzip particles.tar
+ \endcode
+  
+ */
+ 

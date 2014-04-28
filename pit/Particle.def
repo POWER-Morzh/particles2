@@ -1,0 +1,13 @@
+#include "peano/utils/Globals.h"
+
+
+Packed-Type: short int;
+
+
+Constant: DIMENSIONS;
+
+
+class particles::pit::records::Particle {
+  persistent expose parallelise double  x[DIMENSIONS];
+  persistent expose parallelise double  v[DIMENSIONS];
+};

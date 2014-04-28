@@ -1,0 +1,6 @@
+Packed-Type: short int;
+
+
+class particles::pit::dastgen::Vertex {  
+  discard parallelise int  numberOfAdjacentEraseTriggers;
+};
