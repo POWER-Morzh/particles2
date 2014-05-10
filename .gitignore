@@ -32,3 +32,8 @@ lib
 # Hidden due to licencing or otherwise
 ml_login_data.mat
 
+# Peano files
+peano-Particles
+files.mk
+compiler-minutes.txt
+
