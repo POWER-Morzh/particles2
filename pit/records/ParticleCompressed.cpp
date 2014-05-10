@@ -5,80 +5,20 @@ particles::pit::records::ParticleCompressed::PersistentRecords::PersistentRecord
 }
 
 
-particles::pit::records::ParticleCompressed::PersistentRecords::PersistentRecords(const tarch::la::Vector<DIMENSIONS,double>& x):
-_x(x) {
-   
-}
-
-
-/**
- * Generated and optimized
- * 
- * If you realise a for loop using exclusively arrays (vectors) and compile 
- * with -DUseManualAlignment you may add 
- * \code
- #pragma vector aligned
- #pragma simd
- \endcode to this for loop to enforce your compiler to use SSE/AVX.
- * 
- * The alignment is tied to the unpacked records, i.e. for packed class
- * variants the machine's natural alignment is switched off to recude the  
- * memory footprint. Do not use any SSE/AVX operations or 
- * vectorisation on the result for the packed variants, as the data is misaligned. 
- * If you rely on vectorisation, convert the underlying record 
- * into the unpacked version first. 
- * 
- * @see convert()
- */
- tarch::la::Vector<DIMENSIONS,double> particles::pit::records::ParticleCompressed::PersistentRecords::getX() const  {
-   return _x;
-}
-
-
-
-/**
- * Generated and optimized
- * 
- * If you realise a for loop using exclusively arrays (vectors) and compile 
- * with -DUseManualAlignment you may add 
- * \code
- #pragma vector aligned
- #pragma simd
- \endcode to this for loop to enforce your compiler to use SSE/AVX.
- * 
- * The alignment is tied to the unpacked records, i.e. for packed class
- * variants the machine's natural alignment is switched off to recude the  
- * memory footprint. Do not use any SSE/AVX operations or 
- * vectorisation on the result for the packed variants, as the data is misaligned. 
- * If you rely on vectorisation, convert the underlying record 
- * into the unpacked version first. 
- * 
- * @see convert()
- */
- void particles::pit::records::ParticleCompressed::PersistentRecords::setX(const tarch::la::Vector<DIMENSIONS,double>& x)  {
-   _x = (x);
-}
-
-
 particles::pit::records::ParticleCompressed::ParticleCompressed() {
    
 }
 
 
 particles::pit::records::ParticleCompressed::ParticleCompressed(const PersistentRecords& persistentRecords):
-_persistentRecords(persistentRecords._x) {
-   
-}
-
-
-particles::pit::records::ParticleCompressed::ParticleCompressed(const tarch::la::Vector<DIMENSIONS,double>& x):
-_persistentRecords(x) {
+_persistentRecords() {
    
 }
 
 
 particles::pit::records::ParticleCompressed::ParticleCompressed(const tarch::la::Vector<DIMENSIONS,double>& x, const tarch::la::Vector<DIMENSIONS,double>& v):
-_persistentRecords(x),_v(v) {
+_x(x),
+_v(v) {
    
 }
 
@@ -105,7 +45,7 @@ particles::pit::records::ParticleCompressed::~ParticleCompressed() { }
  * @see convert()
  */
  tarch::la::Vector<DIMENSIONS,double> particles::pit::records::ParticleCompressed::getX() const  {
-   return _persistentRecords._x;
+   return _x;
 }
 
 
@@ -130,7 +70,7 @@ particles::pit::records::ParticleCompressed::~ParticleCompressed() { }
  * @see convert()
  */
  void particles::pit::records::ParticleCompressed::setX(const tarch::la::Vector<DIMENSIONS,double>& x)  {
-   _persistentRecords._x = (x);
+   _x = (x);
 }
 
 
@@ -138,7 +78,7 @@ particles::pit::records::ParticleCompressed::~ParticleCompressed() { }
  double particles::pit::records::ParticleCompressed::getX(int elementIndex) const  {
    assertion(elementIndex>=0);
    assertion(elementIndex<DIMENSIONS);
-   return _persistentRecords._x[elementIndex];
+   return _x[elementIndex];
    
 }
 
@@ -147,7 +87,7 @@ particles::pit::records::ParticleCompressed::~ParticleCompressed() { }
  void particles::pit::records::ParticleCompressed::setX(int elementIndex, const double& x)  {
    assertion(elementIndex>=0);
    assertion(elementIndex<DIMENSIONS);
-   _persistentRecords._x[elementIndex]= x;
+   _x[elementIndex]= x;
    
 }
 
@@ -284,9 +224,9 @@ particles::pit::records::ParticleCompressedPacked particles::pit::records::Parti
          
          MPI_Aint base;
          MPI_Address( const_cast<void*>(static_cast<const void*>(&(dummyParticleCompressed[0]))), &base);
-         MPI_Address( const_cast<void*>(static_cast<const void*>(&(dummyParticleCompressed[0]._persistentRecords._x[0]))), 		&disp[0] );
+         MPI_Address( const_cast<void*>(static_cast<const void*>(&(dummyParticleCompressed[0]._x[0]))), 		&disp[0] );
          MPI_Address( const_cast<void*>(static_cast<const void*>(&(dummyParticleCompressed[0]._v[0]))), 		&disp[1] );
-         MPI_Address( const_cast<void*>(static_cast<const void*>(&dummyParticleCompressed[1]._persistentRecords._x[0])), 		&disp[2] );
+         MPI_Address( const_cast<void*>(static_cast<const void*>(&dummyParticleCompressed[1]._x[0])), 		&disp[2] );
          
          for (int i=1; i<Attributes; i++) {
             assertion1( disp[i] > disp[i-1], i );
@@ -318,9 +258,9 @@ particles::pit::records::ParticleCompressedPacked particles::pit::records::Parti
          
          MPI_Aint base;
          MPI_Address( const_cast<void*>(static_cast<const void*>(&(dummyParticleCompressed[0]))), &base);
-         MPI_Address( const_cast<void*>(static_cast<const void*>(&(dummyParticleCompressed[0]._persistentRecords._x[0]))), 		&disp[0] );
+         MPI_Address( const_cast<void*>(static_cast<const void*>(&(dummyParticleCompressed[0]._x[0]))), 		&disp[0] );
          MPI_Address( const_cast<void*>(static_cast<const void*>(&(dummyParticleCompressed[0]._v[0]))), 		&disp[1] );
-         MPI_Address( const_cast<void*>(static_cast<const void*>(&dummyParticleCompressed[1]._persistentRecords._x[0])), 		&disp[2] );
+         MPI_Address( const_cast<void*>(static_cast<const void*>(&dummyParticleCompressed[1]._x[0])), 		&disp[2] );
          
          for (int i=1; i<Attributes; i++) {
             assertion1( disp[i] > disp[i-1], i );
@@ -563,62 +503,9 @@ particles::pit::records::ParticleCompressedPacked::PersistentRecords::Persistent
 }
 
 
-particles::pit::records::ParticleCompressedPacked::PersistentRecords::PersistentRecords(const tarch::la::Vector<DIMENSIONS,double>& x):
-_x(x) {
-   
-}
-
-
-/**
- * Generated and optimized
- * 
- * If you realise a for loop using exclusively arrays (vectors) and compile 
- * with -DUseManualAlignment you may add 
- * \code
- #pragma vector aligned
- #pragma simd
- \endcode to this for loop to enforce your compiler to use SSE/AVX.
- * 
- * The alignment is tied to the unpacked records, i.e. for packed class
- * variants the machine's natural alignment is switched off to recude the  
- * memory footprint. Do not use any SSE/AVX operations or 
- * vectorisation on the result for the packed variants, as the data is misaligned. 
- * If you rely on vectorisation, convert the underlying record 
- * into the unpacked version first. 
- * 
- * @see convert()
- */
- tarch::la::Vector<DIMENSIONS,double> particles::pit::records::ParticleCompressedPacked::PersistentRecords::getX() const  {
-   return _x;
-}
-
-
-
-/**
- * Generated and optimized
- * 
- * If you realise a for loop using exclusively arrays (vectors) and compile 
- * with -DUseManualAlignment you may add 
- * \code
- #pragma vector aligned
- #pragma simd
- \endcode to this for loop to enforce your compiler to use SSE/AVX.
- * 
- * The alignment is tied to the unpacked records, i.e. for packed class
- * variants the machine's natural alignment is switched off to recude the  
- * memory footprint. Do not use any SSE/AVX operations or 
- * vectorisation on the result for the packed variants, as the data is misaligned. 
- * If you rely on vectorisation, convert the underlying record 
- * into the unpacked version first. 
- * 
- * @see convert()
- */
- void particles::pit::records::ParticleCompressedPacked::PersistentRecords::setX(const tarch::la::Vector<DIMENSIONS,double>& x)  {
-   _x = (x);
-}
-
-
 particles::pit::records::ParticleCompressedPacked::ParticleCompressedPacked() {
+   assertion((sizeof(short int) >= 2));
+   assertion((sizeof(double) == 8));
    assertion((sizeof(short int) >= 2));
    assertion((sizeof(double) == 8));
    
@@ -626,24 +513,20 @@ particles::pit::records::ParticleCompressedPacked::ParticleCompressedPacked() {
 
 
 particles::pit::records::ParticleCompressedPacked::ParticleCompressedPacked(const PersistentRecords& persistentRecords):
-_persistentRecords(persistentRecords._x) {
+_persistentRecords() {
+   assertion((sizeof(short int) >= 2));
+   assertion((sizeof(double) == 8));
    assertion((sizeof(short int) >= 2));
    assertion((sizeof(double) == 8));
    
 }
 
 
-particles::pit::records::ParticleCompressedPacked::ParticleCompressedPacked(const tarch::la::Vector<DIMENSIONS,double>& x):
-_persistentRecords(x) {
-   assertion((sizeof(short int) >= 2));
-   assertion((sizeof(double) == 8));
-   
-}
-
-
-particles::pit::records::ParticleCompressedPacked::ParticleCompressedPacked(const tarch::la::Vector<DIMENSIONS,double>& x, const tarch::la::Vector<DIMENSIONS,double>& v):
-_persistentRecords(x) {
+particles::pit::records::ParticleCompressedPacked::ParticleCompressedPacked(const tarch::la::Vector<DIMENSIONS,double>& x, const tarch::la::Vector<DIMENSIONS,double>& v) {
+   setX(x);
    setV(v);
+   assertion((sizeof(short int) >= 2));
+   assertion((sizeof(double) == 8));
    assertion((sizeof(short int) >= 2));
    assertion((sizeof(double) == 8));
    
@@ -672,7 +555,11 @@ particles::pit::records::ParticleCompressedPacked::~ParticleCompressedPacked() {
  * @see convert()
  */
  tarch::la::Vector<DIMENSIONS,double> particles::pit::records::ParticleCompressedPacked::getX() const  {
-   return _persistentRecords._x;
+   tarch::la::Vector<DIMENSIONS,double> result;
+   for (int i = 0; i < DIMENSIONS; i++) {
+      result[i] = getX(i);
+   }
+   return result;
 }
 
 
@@ -697,24 +584,63 @@ particles::pit::records::ParticleCompressedPacked::~ParticleCompressedPacked() {
  * @see convert()
  */
  void particles::pit::records::ParticleCompressedPacked::setX(const tarch::la::Vector<DIMENSIONS,double>& x)  {
-   _persistentRecords._x = (x);
+   for (int i = 0; i < DIMENSIONS; i++) {
+      setX(i, x[i]);
+   }
 }
 
 
 
  double particles::pit::records::ParticleCompressedPacked::getX(int elementIndex) const  {
+   
    assertion(elementIndex>=0);
    assertion(elementIndex<DIMENSIONS);
-   return _persistentRecords._x[elementIndex];
+
+   if( _x[elementIndex] == 0 ) {
+      return 0;
+   }
+   int tmp = 0;
+   tmp |= ((_x[elementIndex] & 0x8000) << 16);
+   int exponent = ((_x[elementIndex] & 0x7f00) >> 8);
+   exponent = exponent - 63 + 1023;
+   tmp |= (exponent << 20);
+   tmp |= ((_x[elementIndex] & 0x00ff) << 12);
+   double result = 0;
+   char* double_ptr = reinterpret_cast<char*> (&result) + 4;
+   char* int_ptr = reinterpret_cast<char*> (&tmp);
+   *double_ptr = *int_ptr;
+   *(double_ptr + 1) = *(int_ptr + 1);
+   *(double_ptr + 2) = *(int_ptr + 2);
+   *(double_ptr + 3) = *(int_ptr + 3);
+   
+   return result;
    
 }
 
 
 
  void particles::pit::records::ParticleCompressedPacked::setX(int elementIndex, const double& x)  {
+   
    assertion(elementIndex>=0);
    assertion(elementIndex<DIMENSIONS);
-   _persistentRecords._x[elementIndex]= x;
+   int tmp = 0;
+   const char* double_ptr = reinterpret_cast<const char*> (&x) + 4;
+   char* int_ptr = reinterpret_cast<char*> (&tmp);
+   *int_ptr = *double_ptr;
+   *(int_ptr + 1) = *(double_ptr + 1);
+   *(int_ptr + 2) = *(double_ptr + 2);
+   *(int_ptr + 3) = *(double_ptr + 3);
+   if(tmp == 0) {
+      _x[elementIndex] = 0;
+   } else {
+      tmp = tmp >> 12;
+   
+      _x[elementIndex] = tmp & 0xff;
+      short int exponent = (tmp & 0x0007ff00) >> 8;
+      exponent = exponent - 1023 + 63;
+      _x[elementIndex] |= (exponent << 8);
+      _x[elementIndex] |= (tmp >> 4) & 0x8000;
+   }
    
 }
 
@@ -780,6 +706,10 @@ particles::pit::records::ParticleCompressedPacked::~ParticleCompressedPacked() {
    
    assertion(elementIndex>=0);
    assertion(elementIndex<DIMENSIONS);
+
+   if( _v[elementIndex] == 0 ) {
+	  return 0;
+   }
    int tmp = 0;
    tmp |= ((_v[elementIndex] & 0x8000) << 16);
    int exponent = ((_v[elementIndex] & 0x7f00) >> 8);
@@ -811,13 +741,17 @@ particles::pit::records::ParticleCompressedPacked::~ParticleCompressedPacked() {
    *(int_ptr + 1) = *(double_ptr + 1);
    *(int_ptr + 2) = *(double_ptr + 2);
    *(int_ptr + 3) = *(double_ptr + 3);
-   tmp = tmp >> 12;
+   if( tmp == 0 ) {
+      _v[elementIndex] = 0;
+   } else {
+      tmp = tmp >> 12;
    
-   _v[elementIndex] = tmp & 0xff;
-   short int exponent = (tmp & 0x0007ff00) >> 8;
-   exponent = exponent - 1023 + 63;
-   _v[elementIndex] |= (exponent << 8);
-   _v[elementIndex] |= (tmp >> 4) & 0x8000;
+      _v[elementIndex] = tmp & 0xff;
+      short int exponent = (tmp & 0x0007ff00) >> 8;
+      exponent = exponent - 1023 + 63;
+      _v[elementIndex] |= (exponent << 8);
+      _v[elementIndex] |= (tmp >> 4) & 0x8000;
+   }
    
 }
 
@@ -871,7 +805,7 @@ particles::pit::records::ParticleCompressed particles::pit::records::ParticleCom
          
          const int Attributes = 3;
          MPI_Datatype subtypes[Attributes] = {
-            MPI_DOUBLE,		 //x
+            MPI_SHORT,		 //x
             MPI_SHORT,		 //v
             MPI_UB		 // end/displacement flag
          };
@@ -886,9 +820,9 @@ particles::pit::records::ParticleCompressed particles::pit::records::ParticleCom
          
          MPI_Aint base;
          MPI_Address( const_cast<void*>(static_cast<const void*>(&(dummyParticleCompressedPacked[0]))), &base);
-         MPI_Address( const_cast<void*>(static_cast<const void*>(&(dummyParticleCompressedPacked[0]._persistentRecords._x[0]))), 		&disp[0] );
+         MPI_Address( const_cast<void*>(static_cast<const void*>(&(dummyParticleCompressedPacked[0]._x[0]))), 		&disp[0] );
          MPI_Address( const_cast<void*>(static_cast<const void*>(&(dummyParticleCompressedPacked[0]._v[0]))), 		&disp[1] );
-         MPI_Address( const_cast<void*>(static_cast<const void*>(&dummyParticleCompressedPacked[1]._persistentRecords._x[0])), 		&disp[2] );
+         MPI_Address( const_cast<void*>(static_cast<const void*>(&dummyParticleCompressedPacked[1]._x[0])), 		&disp[2] );
          
          for (int i=1; i<Attributes; i++) {
             assertion1( disp[i] > disp[i-1], i );
@@ -905,7 +839,7 @@ particles::pit::records::ParticleCompressed particles::pit::records::ParticleCom
          
          const int Attributes = 3;
          MPI_Datatype subtypes[Attributes] = {
-            MPI_DOUBLE,		 //x
+            MPI_SHORT,		 //x
             MPI_SHORT,		 //v
             MPI_UB		 // end/displacement flag
          };
@@ -920,9 +854,9 @@ particles::pit::records::ParticleCompressed particles::pit::records::ParticleCom
          
          MPI_Aint base;
          MPI_Address( const_cast<void*>(static_cast<const void*>(&(dummyParticleCompressedPacked[0]))), &base);
-         MPI_Address( const_cast<void*>(static_cast<const void*>(&(dummyParticleCompressedPacked[0]._persistentRecords._x[0]))), 		&disp[0] );
+         MPI_Address( const_cast<void*>(static_cast<const void*>(&(dummyParticleCompressedPacked[0]._x[0]))), 		&disp[0] );
          MPI_Address( const_cast<void*>(static_cast<const void*>(&(dummyParticleCompressedPacked[0]._v[0]))), 		&disp[1] );
-         MPI_Address( const_cast<void*>(static_cast<const void*>(&dummyParticleCompressedPacked[1]._persistentRecords._x[0])), 		&disp[2] );
+         MPI_Address( const_cast<void*>(static_cast<const void*>(&dummyParticleCompressedPacked[1]._x[0])), 		&disp[2] );
          
          for (int i=1; i<Attributes; i++) {
             assertion1( disp[i] > disp[i-1], i );

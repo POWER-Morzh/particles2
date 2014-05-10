@@ -1,5 +1,5 @@
 #include "particles/pit/adapters/MoveParticlesAndPlot.h"
-#include <iostream>
+
 
 
 peano::MappingSpecification   particles::pit::adapters::MoveParticlesAndPlot::touchVertexLastTimeSpecification() {
@@ -720,6 +720,7 @@ void particles::pit::adapters::MoveParticlesAndPlot::ascend(
   const peano::grid::VertexEnumerator&          coarseGridVerticesEnumerator,
   particles::pit::Cell&           coarseGridCell
 ) {
+
   _map2DropParticles.ascend( fineGridCells, fineGridVertices, fineGridVerticesEnumerator, coarseGridVertices, coarseGridVerticesEnumerator, coarseGridCell );
   _map2PlotParticles.ascend( fineGridCells, fineGridVertices, fineGridVerticesEnumerator, coarseGridVertices, coarseGridVerticesEnumerator, coarseGridCell );
   _map2MoveParticles.ascend( fineGridCells, fineGridVertices, fineGridVerticesEnumerator, coarseGridVertices, coarseGridVerticesEnumerator, coarseGridCell );

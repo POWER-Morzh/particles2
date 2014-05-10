@@ -127,6 +127,18 @@ class particles::pit::Cell: public peano::grid::Cell< particles::pit::records::C
      * This operation sets the mean velocity only for leaf cells with particles.
      */
     void setMeanVelocity(const tarch::la::Vector<DIMENSIONS, double>& meanVelocity);
+
+    /*
+     * Get the mean Coordinate of Particles in this sell
+     */
+    tarch::la::Vector<DIMENSIONS, double> getMeanCoordinate() const;
+
+    /**
+     * Set the mean Coordinate of Particles in this sell
+     *
+     * This operation sets the mean velocity only for leaf cells with particles.
+     */
+    void setMeanCoordinate(const tarch::la::Vector<DIMENSIONS, double>& meanVelocity);
 };
 
 

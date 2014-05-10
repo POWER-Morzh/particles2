@@ -8,6 +8,6 @@ Constant: DIMENSIONS;
 
 
 class particles::pit::records::ParticleCompressed {
-  persistent expose parallelise double  x[DIMENSIONS];
+  discard expose parallelise packe double  x[DIMENSIONS];
   discard expose parallelise packed double  v[DIMENSIONS];
 };

@@ -70,3 +70,11 @@ void particles::pit::Cell::setMeanVelocity(const tarch::la::Vector<DIMENSIONS, d
 	_cellData.setMeanVelocity(meanVelocity);
 }
 
+tarch::la::Vector<DIMENSIONS, double> particles::pit::Cell::getMeanCoordinate() const {
+  return _cellData.getMeanCoordinate();
+}
+
+
+void particles::pit::Cell::setMeanCoordinate(const tarch::la::Vector<DIMENSIONS, double>& meanVelocity) {
+	_cellData.setMeanCoordinate(meanVelocity);
+}

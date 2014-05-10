@@ -34,7 +34,7 @@ namespace particles {
  *
  * 		   build date: 09-02-2014 14:40
  *
- * @date   30/03/2014 12:00
+ * @date   28/04/2014 17:35
  */
 class particles::pit::records::Particle { 
    
@@ -404,7 +404,7 @@ class particles::pit::records::Particle {
           *
           * 		   build date: 09-02-2014 14:40
           *
-          * @date   30/03/2014 12:00
+          * @date   28/04/2014 17:35
           */
          class particles::pit::records::ParticlePacked { 
             

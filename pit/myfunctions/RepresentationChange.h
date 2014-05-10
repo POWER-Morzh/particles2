@@ -32,6 +32,7 @@ class particles::pit::myfunctions::RepresentationChange {
 	static double _globalMaxL2ErrorNorm;
 	static int _globalNormAdditions;
 	static tarch::la::Vector<DIMENSIONS, double> _globalL2ErrorNorm;
+	static tarch::la::Vector<DIMENSIONS, double> _globalL2OffsetNorm;
 	static int _iteration;
 
 	static bool _outputInConsole;
@@ -63,7 +64,8 @@ class particles::pit::myfunctions::RepresentationChange {
     static void writeInCompressedHeap(
       const ParticleHeap::HeapEntries&                        currentParticles,
       const int                                               cellIndex,
-      const tarch::la::Vector<DIMENSIONS, double>&            meanVelocity);
+      const tarch::la::Vector<DIMENSIONS, double>&            meanVelocity,
+      const tarch::la::Vector<DIMENSIONS, double>&            meanCoordinate);
 
     /*
      * Skip value of globalL2Norm to 0 to start new iteration.

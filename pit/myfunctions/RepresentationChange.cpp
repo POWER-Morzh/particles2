@@ -1,4 +1,5 @@
 #include "particles/pit/myfunctions/RepresentationChange.h"
+#include "particles/pit/myfunctions/CoordinatesRepresentationChange.h"
 #include <iostream>
 #include <cmath>
 #include <limits>
@@ -10,6 +11,7 @@ double particles::pit::myfunctions::RepresentationChange::_globalMaxRelativeErro
 double particles::pit::myfunctions::RepresentationChange::_globalMaxL2ErrorNorm = 0;
 int particles::pit::myfunctions::RepresentationChange::_globalNormAdditions = 0;
 tarch::la::Vector<DIMENSIONS, double> particles::pit::myfunctions::RepresentationChange::_globalL2ErrorNorm(0);
+tarch::la::Vector<DIMENSIONS, double> particles::pit::myfunctions::RepresentationChange::_globalL2OffsetNorm(0);
 
 int particles::pit::myfunctions::RepresentationChange::_iteration = 0;
 
@@ -104,25 +106,19 @@ void particles::pit::myfunctions::RepresentationChange::leaveCell(particles::pit
     // Compute the mean value of the velocity for each axes
     tarch::la::Vector<DIMENSIONS, double> meanVelocity = computeMeanVelocity(currentParticles, NumberOfParticles);
 
-    // Write mean velocity in Cell
+    // Compute the mean value of the coordinate for each axes
+    tarch::la::Vector<DIMENSIONS, double> meanCoordinate = particles::pit::myfunctions::CoordinatesRepresentationChange::computeMeanCoordinate(currentParticles, NumberOfParticles);
+
+    // Write mean velocity and coordinate in Cell
     fineGridCell.setMeanVelocity(meanVelocity);
+    fineGridCell.setMeanCoordinate(meanCoordinate);
 
     // Write in Heap of compressed Particles
-    writeInCompressedHeap(currentParticles, cellIndex, meanVelocity);
+    writeInCompressedHeap(currentParticles, cellIndex, meanVelocity, meanCoordinate);
 
     // Compute L2-Norm for each axes
     tarch::la::Vector<DIMENSIONS, double> l2ErrorNorm = computeL2ErrorNorm(fineGridCell);
-    // Save maximal l2ErrorNorm in _globalMaxL2ErrorNorm
-    for(int d = 0; d<DIMENSIONS; d++) {
-      if(_globalMaxL2ErrorNorm < l2ErrorNorm[d]) {
-        _globalMaxL2ErrorNorm = l2ErrorNorm[d];
-      }
-    }
-    // Add l2Norm to _globalL2Norm
-    _globalL2ErrorNorm += l2ErrorNorm;
-    // Don't forget to increment _globalNormAdditions to divide _globalL2Norm by it
-    // at the end of iteration before writing it in the file!
-    ++_globalNormAdditions;
+    std::cout << "leaveCell: " << l2ErrorNorm << std::endl;
   }
 }
 
@@ -244,7 +240,7 @@ tarch::la::Vector<DIMENSIONS, double> particles::pit::myfunctions::Representatio
   const int cellIndex = fineGridCell.getCellIndex();
   const int NumberOfParticles = ParticleHeap::getInstance().getData(cellIndex).size();
   const ParticleHeap::HeapEntries& currentParticles = ParticleHeap::getInstance().getData(cellIndex);
-  const ParticleCompressedHeap::HeapEntries& compressedParticles = ParticleCompressedHeap::getInstance().getData(cellIndex);
+  //const ParticleCompressedHeap::HeapEntries& compressedParticles = ParticleCompressedHeap::getInstance().getData(cellIndex);
 
   tarch::la::Vector<DIMENSIONS, double> l2Norm(0);
   tarch::la::Vector<DIMENSIONS, double> meanVelocity(0);
@@ -256,7 +252,7 @@ tarch::la::Vector<DIMENSIONS, double> particles::pit::myfunctions::Representatio
 
     for (int i=0; i<NumberOfParticles; i++) {
 	  for(int d=0; d < DIMENSIONS; d++) {
-	    l2Norm[d] += std::abs(compressedParticles.at(i).getV()[d]);
+	    l2Norm[d] += std::abs(currentParticles.at(i).getV()[d] - meanVelocity[d]);
 	  }
     }
     for (int d =0; d<DIMENSIONS; d++) {
@@ -323,7 +319,8 @@ double particles::pit::myfunctions::RepresentationChange::computeMaxError( const
 void particles::pit::myfunctions::RepresentationChange::writeInCompressedHeap(
   const ParticleHeap::HeapEntries&                        currentParticles,
   const int                                               cellIndex,
-  const tarch::la::Vector<DIMENSIONS, double>&            meanVelocity
+  const tarch::la::Vector<DIMENSIONS, double>&            meanVelocity,
+  const tarch::la::Vector<DIMENSIONS, double>&            meanCoordinate
 ) {
   const int NumberOfParticles = currentParticles.size();
 
@@ -332,7 +329,7 @@ void particles::pit::myfunctions::RepresentationChange::writeInCompressedHeap(
 
   for (int i = 0; i< NumberOfParticles; i++) {
     particles::pit::records::ParticleCompressedPacked newParticleCompressed;
-    newParticleCompressed.setX(currentParticles[i]._persistentRecords._x);
+    newParticleCompressed.setX( (currentParticles[i]._persistentRecords._x == meanCoordinate) ? 0.000000000000000001 : (currentParticles[i]._persistentRecords._x - meanCoordinate) );
     newParticleCompressed.setV( (currentParticles[i]._persistentRecords._v == meanVelocity) ? 0.000000000000000001 : (currentParticles[i]._persistentRecords._v - meanVelocity) );
     ParticleCompressedHeap::getInstance().getData(cellIndex).push_back(newParticleCompressed);
   }
@@ -341,10 +338,13 @@ void particles::pit::myfunctions::RepresentationChange::writeInCompressedHeap(
 
 
 void particles::pit::myfunctions::RepresentationChange::beginIteration() {
+  particles::pit::myfunctions::CoordinatesRepresentationChange::beginIteration();
+
   _globalMaxRelativeError = 0;
   _globalMaxL2ErrorNorm = 0;
   tarch::la::Vector<DIMENSIONS, double> zeroVector(0);
   _globalL2ErrorNorm = zeroVector;
+  _globalL2OffsetNorm = zeroVector;
   _globalNormAdditions = 0;
 
   _maxRelativeErrorOut.str("");
@@ -365,9 +365,11 @@ void particles::pit::myfunctions::RepresentationChange::beginIteration() {
 
 
 void particles::pit::myfunctions::RepresentationChange::endIteration() {
+  particles::pit::myfunctions::CoordinatesRepresentationChange::endIteration();
 
   for(int d = 0; d<DIMENSIONS; d++) {
     _globalL2ErrorNorm[d] /= _globalNormAdditions;
+    _globalL2OffsetNorm[d] /= _globalNormAdditions;
   }
 
   writeAllInFile();
@@ -379,35 +381,38 @@ void particles::pit::myfunctions::RepresentationChange::endIteration() {
 
 void particles::pit::myfunctions::RepresentationChange::writeAllInFile() {
   // Write maxRelativeError
-  writeNorm( "maxRelativeError", _maxRelativeErrorOut );
+  //writeNorm( "maxRelativeError", _maxRelativeErrorOut );
 
   // Write maxError
-  writeNorm( "maxError", _maxErrorOut );
+  //writeNorm( "maxError", _maxErrorOut );
 
   // Write maxOffset
-  writeNorm( "maxOffset", _maxOffsetOut );
+  //writeNorm( "maxOffset", _maxOffsetOut );
 
   // Write maxRelativeError
-  writeNorm( "RMSDOut", _RMSDOut );
+  //writeNorm( "RMSDOut", _RMSDOut );
 
   // Write l2ErrorNorm
-  writeNorm( "L2ErrorNorm", _L2ErrorNormOut );
+  //writeNorm( "L2ErrorNorm", _L2ErrorNormOut );
 
   // Write l2Norm
-  writeNorm( "L2Norm", _L2NormOut );
+  //writeNorm( "L2Norm", _L2NormOut );
 
   // Write meanVelocity
-  writeNorm( "meanVelocity", _meanVelocityOut );
+  //writeNorm( "meanVelocity", _meanVelocityOut );
 
   static bool writeFirstTime = 1;
-  // Write globalL2Norm
+  // Write globalL2ErrorNorm
   writeGlobalNorm( "globalL2ErrorNorm.dat", _globalL2ErrorNorm, writeFirstTime );
 
+  // Write _globalL2OffsetNorm
+  writeGlobalNorm( "globalL2OffsetNorm.dat", _globalL2OffsetNorm, writeFirstTime );
+
   // Write _globalMaxL2ErrorNorm
-  writeGlobalNorm( "globalMaxL2ErrorNorm", _globalMaxL2ErrorNorm, writeFirstTime );
+  writeGlobalNorm( "globalMaxL2ErrorNorm.dat", _globalMaxL2ErrorNorm, writeFirstTime );
 
   // Write _globalMaxRelativeError
-  writeGlobalNorm( "globalMaxRelativeError", _globalMaxRelativeError, writeFirstTime );
+  writeGlobalNorm( "globalMaxRelativeError.dat", _globalMaxRelativeError, writeFirstTime );
   writeFirstTime = 0;
 }
 
@@ -420,7 +425,7 @@ void particles::pit::myfunctions::RepresentationChange::writeGlobalNorm( const s
     out.close();
     out.open( filename.c_str(), std::ofstream::app );
   }
-  if ( (!out.fail()) && out.is_open() ) {
+  if ( (!out.fail()) && out.is_open() && !writeFirstTime ) {
 	for(int d = 0; d<DIMENSIONS; d++) {
       out << Norm[d] << " ";
 	}
@@ -450,14 +455,17 @@ void particles::pit::myfunctions::RepresentationChange::ascend(
   const peano::grid::VertexEnumerator&          coarseGridVerticesEnumerator,
   particles::pit::Cell&           coarseGridCell
 ) {
+	particles::pit::myfunctions::CoordinatesRepresentationChange::ascend( fineGridCells, fineGridVertices, fineGridVerticesEnumerator, coarseGridVertices, coarseGridVerticesEnumerator, coarseGridCell );
 
   dfor3(k)
 	particles::pit::Cell fineGridCell = fineGridCells[ fineGridVerticesEnumerator.cell(k) ];
     const tarch::la::Vector<DIMENSIONS,double> cellOffset     = fineGridVerticesEnumerator.getVertexPosition(k);
     const tarch::la::Vector<DIMENSIONS,double> meanVelocity = fineGridCell.getMeanVelocity();
     bool isLeaf = fineGridCell.isLeaf();
+    const int cellIndex = fineGridCell.getCellIndex();
+    const int NumberOfParticles = ParticleHeap::getInstance().getData(cellIndex).size();
 
-    if( isLeaf ) {
+    if( isLeaf && NumberOfParticles>1 ) {
       // Compute Max-Norm
       double maxRelativeError = computeMaxRelativeError( fineGridCell );
       // Save maximal maxRelativeError in _globalMaxRelativeError
@@ -471,10 +479,25 @@ void particles::pit::myfunctions::RepresentationChange::ascend(
       // Computer L2-Norm
       tarch::la::Vector<DIMENSIONS,double> l2ErrorNorm = computeL2ErrorNorm( fineGridCell );
       tarch::la::Vector<DIMENSIONS,double> l2Norm = computeL2Norm( fineGridCell );
+      std::cout << "ascend: " << l2ErrorNorm << std::endl;
+
+      // Save maximal l2ErrorNorm in _globalMaxL2ErrorNorm
+      for(int d = 0; d<DIMENSIONS; d++) {
+        if(_globalMaxL2ErrorNorm < l2ErrorNorm[d]) {
+          _globalMaxL2ErrorNorm = l2ErrorNorm[d];
+        }
+      }
+      // Add l2ErrorNorm to _globalL2ErrorNorm
+      _globalL2ErrorNorm += l2ErrorNorm;
+      // Add l2Norm to _globalL2OffsetNorm
+      _globalL2OffsetNorm += l2Norm;
+      // Don't forget to increment _globalNormAdditions to divide _globalL2Norm by it
+      // at the end of iteration before writing it in the file!
+      ++_globalNormAdditions;
 
 
       // Output for checking
-      printParticlesInfo( fineGridCell, "rmsd", rmsd );
+      //printParticlesInfo( fineGridCell, "rmsd", rmsd );
 
       _maxRelativeErrorOut << maxRelativeError << " ";
       _maxErrorOut << maxError << " ";
