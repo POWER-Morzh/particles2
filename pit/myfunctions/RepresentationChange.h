@@ -28,6 +28,7 @@ namespace particles {
 
 class particles::pit::myfunctions::RepresentationChange {
   public:
+	static double _globalMaxOffset;
 	static double _globalMaxRelativeError;
 	static double _globalMaxL2ErrorNorm;
 	static int _globalNormAdditions;

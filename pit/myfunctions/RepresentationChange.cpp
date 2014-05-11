@@ -7,6 +7,7 @@
 #include <string>
 #include "peano/utils/Loop.h"
 
+double particles::pit::myfunctions::RepresentationChange::_globalMaxOffset = 0;
 double particles::pit::myfunctions::RepresentationChange::_globalMaxRelativeError = 0;
 double particles::pit::myfunctions::RepresentationChange::_globalMaxL2ErrorNorm = 0;
 int particles::pit::myfunctions::RepresentationChange::_globalNormAdditions = 0;
@@ -68,7 +69,7 @@ void particles::pit::myfunctions::RepresentationChange::printParticlesInfo(const
     std::cout << "---Offsets of velocities---------------------------:" << std::endl;
     for (int i=0; i<NumberOfParticles; i++) {
       for(int d=0; d<DIMENSIONS; d++) {
-    	std::cout << ( currentParticles.at(i)._persistentRecords._v(d) - meanVelocity[d] ) << " ";
+    	std::cout << std::abs( std::abs( currentParticles.at(i)._persistentRecords._v(d) ) - meanVelocity[d] ) << " ";
       }
       std::cout << std::endl;
     }
@@ -129,7 +130,9 @@ tarch::la::Vector<DIMENSIONS, double> particles::pit::myfunctions::Representatio
 ) {
   tarch::la::Vector<DIMENSIONS, double> meanVelocity(0);
   for (int i=0; i<NumberOfParticles; i++) {
-	meanVelocity += currentParticles.at(i)._persistentRecords._v;
+    for(int d=0; d<DIMENSIONS; d++) {
+	  meanVelocity[d] += std::abs( currentParticles.at(i)._persistentRecords._v[d] );
+    }
   }
   for (int d =0; d<DIMENSIONS; d++) {
     meanVelocity[d] /= NumberOfParticles;
@@ -193,7 +196,7 @@ double particles::pit::myfunctions::RepresentationChange::computeMaxRelativeErro
 
     for (int i=0; i<NumberOfParticles; i++) {
 	  for(int d=0; d < DIMENSIONS; d++) {
-		  preciseOffset = currentParticles.at(i)._persistentRecords._v[d] - meanVelocity[d];
+		  preciseOffset = std::abs(currentParticles.at(i)._persistentRecords._v[d]) - meanVelocity[d];
 
 	    if( maxRelativeError <  std::abs( (preciseOffset - compressedParticles.at(i).getV()[d]) / preciseOffset ) ) {
 	      maxRelativeError = std::abs( (preciseOffset - compressedParticles.at(i).getV()[d]) / preciseOffset);
@@ -222,7 +225,7 @@ tarch::la::Vector<DIMENSIONS, double> particles::pit::myfunctions::Representatio
 
     for (int i=0; i<NumberOfParticles; i++) {
 	  for(int d=0; d < DIMENSIONS; d++) {
-	    l2ErrorNorm[d] += std::abs(currentParticles.at(i)._persistentRecords._v[d] - meanVelocity[d] - compressedParticles.at(i).getV()[d]);
+	    l2ErrorNorm[d] += std::abs( std::abs(currentParticles.at(i)._persistentRecords._v[d]) - meanVelocity[d] - compressedParticles.at(i).getV()[d]);
 	  }
     }
     for (int d =0; d<DIMENSIONS; d++) {
@@ -252,7 +255,7 @@ tarch::la::Vector<DIMENSIONS, double> particles::pit::myfunctions::Representatio
 
     for (int i=0; i<NumberOfParticles; i++) {
 	  for(int d=0; d < DIMENSIONS; d++) {
-	    l2Norm[d] += std::abs(currentParticles.at(i).getV()[d] - meanVelocity[d]);
+	    l2Norm[d] += std::abs( std::abs(currentParticles.at(i).getV()[d]) - meanVelocity[d] );
 	  }
     }
     for (int d =0; d<DIMENSIONS; d++) {
@@ -278,11 +281,10 @@ double particles::pit::myfunctions::RepresentationChange::computeMaxOffset( cons
 
     for (int i=0; i<NumberOfParticles; i++) {
 	  for(int d=0; d < DIMENSIONS; d++) {
-	    if( maxOffset < std::abs(currentParticles.at(i)._persistentRecords._v[d] - meanVelocity[d]) )
-	      maxOffset = std::abs(currentParticles.at(i)._persistentRecords._v[d] - meanVelocity[d]);
+	    if( maxOffset < std::abs( std::abs(currentParticles.at(i)._persistentRecords._v[d]) - meanVelocity[d]) )
+	      maxOffset = std::abs( std::abs(currentParticles.at(i)._persistentRecords._v[d]) - meanVelocity[d]);
 	  }
     }
-
   }
 
 
@@ -304,8 +306,8 @@ double particles::pit::myfunctions::RepresentationChange::computeMaxError( const
 
     for (int i=0; i<NumberOfParticles; i++) {
 	  for(int d=0; d < DIMENSIONS; d++) {
-	    if( maxOffset < std::abs(currentParticles.at(i)._persistentRecords._v[d] - meanVelocity[d] - compressedParticles.at(i).getV()[d]) )
-	      maxOffset = std::abs(currentParticles.at(i)._persistentRecords._v[d] - meanVelocity[d] - compressedParticles.at(i).getV()[d]);
+	    if( maxOffset < std::abs(std::abs(currentParticles.at(i)._persistentRecords._v[d]) - meanVelocity[d] - compressedParticles.at(i).getV()[d]) )
+	      maxOffset = std::abs(std::abs(currentParticles.at(i)._persistentRecords._v[d]) - meanVelocity[d] - compressedParticles.at(i).getV()[d]);
 	  }
     }
 
@@ -327,10 +329,17 @@ void particles::pit::myfunctions::RepresentationChange::writeInCompressedHeap(
   // Clear all data from Compressed heap not to manage lifting and dropping of particles
   ParticleCompressedHeap::getInstance().getData(cellIndex).clear();
 
+  // absVlosity is used to store asolute values of currentParicle velocity
+  tarch::la::Vector<DIMENSIONS, double> absVelocity(0);
+
   for (int i = 0; i< NumberOfParticles; i++) {
     particles::pit::records::ParticleCompressedPacked newParticleCompressed;
-    newParticleCompressed.setX( (currentParticles[i]._persistentRecords._x == meanCoordinate) ? 0.000000000000000001 : (currentParticles[i]._persistentRecords._x - meanCoordinate) );
-    newParticleCompressed.setV( (currentParticles[i]._persistentRecords._v == meanVelocity) ? 0.000000000000000001 : (currentParticles[i]._persistentRecords._v - meanVelocity) );
+    newParticleCompressed.setX(  currentParticles[i]._persistentRecords._x - meanCoordinate );
+
+    for(int d = 0; d<DIMENSIONS; d++) {
+      absVelocity[d] = std::abs( currentParticles[i]._persistentRecords._v[d] );
+    }
+    newParticleCompressed.setV( absVelocity - meanVelocity );
     ParticleCompressedHeap::getInstance().getData(cellIndex).push_back(newParticleCompressed);
   }
 
@@ -340,6 +349,7 @@ void particles::pit::myfunctions::RepresentationChange::writeInCompressedHeap(
 void particles::pit::myfunctions::RepresentationChange::beginIteration() {
   particles::pit::myfunctions::CoordinatesRepresentationChange::beginIteration();
 
+  _globalMaxOffset = 0;
   _globalMaxRelativeError = 0;
   _globalMaxL2ErrorNorm = 0;
   tarch::la::Vector<DIMENSIONS, double> zeroVector(0);
@@ -367,9 +377,11 @@ void particles::pit::myfunctions::RepresentationChange::beginIteration() {
 void particles::pit::myfunctions::RepresentationChange::endIteration() {
   particles::pit::myfunctions::CoordinatesRepresentationChange::endIteration();
 
-  for(int d = 0; d<DIMENSIONS; d++) {
-    _globalL2ErrorNorm[d] /= _globalNormAdditions;
-    _globalL2OffsetNorm[d] /= _globalNormAdditions;
+  if ( _globalNormAdditions > 0 ) {
+    for(int d = 0; d<DIMENSIONS; d++) {
+      _globalL2ErrorNorm[d] /= _globalNormAdditions;
+      _globalL2OffsetNorm[d] /= _globalNormAdditions;
+    }
   }
 
   writeAllInFile();
@@ -389,7 +401,7 @@ void particles::pit::myfunctions::RepresentationChange::writeAllInFile() {
   // Write maxOffset
   //writeNorm( "maxOffset", _maxOffsetOut );
 
-  // Write maxRelativeError
+  // Write RMSD
   //writeNorm( "RMSDOut", _RMSDOut );
 
   // Write l2ErrorNorm
@@ -413,6 +425,9 @@ void particles::pit::myfunctions::RepresentationChange::writeAllInFile() {
 
   // Write _globalMaxRelativeError
   writeGlobalNorm( "globalMaxRelativeError.dat", _globalMaxRelativeError, writeFirstTime );
+
+  // Write _globalMaxOffset
+  writeGlobalNorm( "globalMaxOffset.dat", _globalMaxOffset, writeFirstTime );
   writeFirstTime = 0;
 }
 
@@ -474,6 +489,9 @@ void particles::pit::myfunctions::RepresentationChange::ascend(
       }
       double maxError = computeMaxError( fineGridCell );
       double maxOffset = computeMaxOffset( fineGridCell );
+      if(_globalMaxOffset < maxOffset) {
+        _globalMaxOffset = maxOffset;
+      }
       // Compute RMSD
       tarch::la::Vector<DIMENSIONS,double> rmsd = computeRMSD( fineGridCell );
       // Computer L2-Norm
@@ -497,7 +515,7 @@ void particles::pit::myfunctions::RepresentationChange::ascend(
 
 
       // Output for checking
-      //printParticlesInfo( fineGridCell, "rmsd", rmsd );
+      printParticlesInfo( fineGridCell, "l2Norm", l2Norm );
 
       _maxRelativeErrorOut << maxRelativeError << " ";
       _maxErrorOut << maxError << " ";
