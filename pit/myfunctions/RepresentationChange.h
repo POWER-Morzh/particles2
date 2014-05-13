@@ -1,6 +1,8 @@
 #ifndef PARTICLES_PIT_MYFUNCTIONS_RepresentationChange_H_
 #define PARTICLES_PIT_MYFUNCTIONS_RepresentationChange_H_
 
+#define MUL_FACTOR 10;
+
 #include "tarch/logging/Log.h"
 #include "tarch/la/Vector.h"
 
@@ -27,30 +29,39 @@ namespace particles {
 
 
 class particles::pit::myfunctions::RepresentationChange {
-  public:
-	static double _globalMaxOffset;
-	static double _globalMaxRelativeError;
-	static double _globalMaxL2ErrorNorm;
-	static int _globalNormAdditions;
-	static tarch::la::Vector<DIMENSIONS, double> _globalL2ErrorNorm;
-	static tarch::la::Vector<DIMENSIONS, double> _globalL2OffsetNorm;
-	static int _iteration;
+public:
+    static tarch::la::Vector<6, double> _histogramData;
 
-	static bool _outputInConsole;
+    static double _globalMaxOffset;
+    static double _globalMaxRelativeError;
+    static double _globalMaxL2ErrorNorm;
+    static int _globalNormAdditions;
+    static tarch::la::Vector<DIMENSIONS, double> _globalL2ErrorNorm;
+    static tarch::la::Vector<DIMENSIONS, double> _globalL2OffsetNorm;
 
-	static std::ostringstream _maxRelativeErrorOut;
-	static std::ostringstream _maxOffsetOut;
-	static std::ostringstream _maxErrorOut;
-	static std::ostringstream _RMSDOut;
-	static std::ostringstream _L2NormOut;
-	static std::ostringstream _L2ErrorNormOut;
-	static std::ostringstream _meanVelocityOut;
+    static int _iteration;
 
-	static void printParticlesInfo( const particles::pit::Cell& fineGridCell, const std::string normName, const tarch::la::Vector<DIMENSIONS, double> norm );
+    static bool _outputInConsole;
+
+    static std::ostringstream _maxRelativeErrorOut;
+    static std::ostringstream _maxOffsetOut;
+    static std::ostringstream _maxErrorOut;
+    static std::ostringstream _RMSDOut;
+    static std::ostringstream _L2NormOut;
+    static std::ostringstream _L2ErrorNormOut;
+    static std::ostringstream _meanVelocityOut;
+
+    /*
+     * Process Histogram Data
+     */
+    static void writeHistogramData( const std::string& filename, const bool& writeFirstTime );
+    static void processHistogram( const tarch::la::Vector<DIMENSIONS,double>& Norm );
+
+    static void printParticlesInfo( const particles::pit::Cell& fineGridCell, const std::string normName, const tarch::la::Vector<DIMENSIONS, double> norm );
 
     static void leaveCell(particles::pit::Cell& fineGridCell);
 
-    static tarch::la::Vector<DIMENSIONS, double> computeMeanVelocity( const ParticleHeap::HeapEntries& currentParticles, const int& size );
+    static tarch::la::Vector<DIMENSIONS, double> computeMeanVelocity( const ParticleHeap::HeapEntries& currentParticles, const int& NumberOfParticles );
 
     /*
      * Compute norms

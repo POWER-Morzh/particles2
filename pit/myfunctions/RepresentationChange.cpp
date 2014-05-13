@@ -7,6 +7,8 @@
 #include <string>
 #include "peano/utils/Loop.h"
 
+tarch::la::Vector<6, double> particles::pit::myfunctions::RepresentationChange::_histogramData(0);
+
 double particles::pit::myfunctions::RepresentationChange::_globalMaxOffset = 0;
 double particles::pit::myfunctions::RepresentationChange::_globalMaxRelativeError = 0;
 double particles::pit::myfunctions::RepresentationChange::_globalMaxL2ErrorNorm = 0;
@@ -25,6 +27,42 @@ std::ostringstream particles::pit::myfunctions::RepresentationChange::_RMSDOut;
 std::ostringstream particles::pit::myfunctions::RepresentationChange::_L2ErrorNormOut;
 std::ostringstream particles::pit::myfunctions::RepresentationChange::_L2NormOut;
 std::ostringstream particles::pit::myfunctions::RepresentationChange::_meanVelocityOut;
+
+
+void particles::pit::myfunctions::RepresentationChange::writeHistogramData( const std::string& filename, const bool& writeFirstTime ) {
+  std::ofstream out;
+  if( writeFirstTime ) {
+    out.open( filename.c_str() );
+  } else {
+    out.close();
+    out.open( filename.c_str(), std::ofstream::app );
+  }
+  if ( (!out.fail()) && out.is_open() && !writeFirstTime ) {
+    for(int d = 0; d<_histogramData.size(); d++) {
+      out << _histogramData[d] << " ";
+    }
+    out << std::endl;
+  }
+}
+
+
+void particles::pit::myfunctions::RepresentationChange::processHistogram( const tarch::la::Vector<DIMENSIONS,double>& Norm ) {
+  for(int d = 0; d<DIMENSIONS; d++) {
+    if(Norm[d] > 0.01) {
+      _histogramData[5] += 1;
+    } else if( Norm[d] > 0.001 ) {
+      _histogramData[4] += 1;
+    } else if( Norm[d] > 0.0001 ) {
+      _histogramData[3] += 1;
+    } else if( Norm[d] > 0.00001 ) {
+      _histogramData[2] += 1;
+    } else if( Norm[d] > 0.000001 ) {
+      _histogramData[1] += 1;
+    } else {
+      _histogramData[0] += 1;
+    }
+  }
+}
 
 
 void particles::pit::myfunctions::RepresentationChange::printParticlesInfo(const particles::pit::Cell& fineGridCell, const std::string normName, const tarch::la::Vector<DIMENSIONS, double> norm ) {
@@ -349,6 +387,9 @@ void particles::pit::myfunctions::RepresentationChange::writeInCompressedHeap(
 void particles::pit::myfunctions::RepresentationChange::beginIteration() {
   particles::pit::myfunctions::CoordinatesRepresentationChange::beginIteration();
 
+  tarch::la::Vector<6, double> zeroVector6(0);
+  _histogramData = zeroVector6;
+
   _globalMaxOffset = 0;
   _globalMaxRelativeError = 0;
   _globalMaxL2ErrorNorm = 0;
@@ -405,7 +446,7 @@ void particles::pit::myfunctions::RepresentationChange::writeAllInFile() {
   //writeNorm( "RMSDOut", _RMSDOut );
 
   // Write l2ErrorNorm
-  //writeNorm( "L2ErrorNorm", _L2ErrorNormOut );
+  writeNorm( "L2ErrorNorm1", _L2ErrorNormOut );
 
   // Write l2Norm
   //writeNorm( "L2Norm", _L2NormOut );
@@ -414,20 +455,22 @@ void particles::pit::myfunctions::RepresentationChange::writeAllInFile() {
   //writeNorm( "meanVelocity", _meanVelocityOut );
 
   static bool writeFirstTime = 1;
+  // Write Histogram data
+  writeHistogramData( "histogram1", writeFirstTime);
   // Write globalL2ErrorNorm
-  writeGlobalNorm( "globalL2ErrorNorm.dat", _globalL2ErrorNorm, writeFirstTime );
+  writeGlobalNorm( "globalL2ErrorNorm.dat1", _globalL2ErrorNorm, writeFirstTime );
 
   // Write _globalL2OffsetNorm
-  writeGlobalNorm( "globalL2OffsetNorm.dat", _globalL2OffsetNorm, writeFirstTime );
+  writeGlobalNorm( "globalL2OffsetNorm.dat1", _globalL2OffsetNorm, writeFirstTime );
 
   // Write _globalMaxL2ErrorNorm
-  writeGlobalNorm( "globalMaxL2ErrorNorm.dat", _globalMaxL2ErrorNorm, writeFirstTime );
+  writeGlobalNorm( "globalMaxL2ErrorNorm.dat1", _globalMaxL2ErrorNorm, writeFirstTime );
 
   // Write _globalMaxRelativeError
-  writeGlobalNorm( "globalMaxRelativeError.dat", _globalMaxRelativeError, writeFirstTime );
+  writeGlobalNorm( "globalMaxRelativeError.dat1", _globalMaxRelativeError, writeFirstTime );
 
   // Write _globalMaxOffset
-  writeGlobalNorm( "globalMaxOffset.dat", _globalMaxOffset, writeFirstTime );
+  writeGlobalNorm( "globalMaxOffset.dat1", _globalMaxOffset, writeFirstTime );
   writeFirstTime = 0;
 }
 
@@ -435,16 +478,16 @@ void particles::pit::myfunctions::RepresentationChange::writeAllInFile() {
 void particles::pit::myfunctions::RepresentationChange::writeGlobalNorm( const std::string& filename, const tarch::la::Vector<DIMENSIONS,double>& Norm, const bool& writeFirstTime ) {
   std::ofstream out;
   if( writeFirstTime ) {
-	out.open( filename.c_str() );
+    out.open( filename.c_str() );
   } else {
     out.close();
     out.open( filename.c_str(), std::ofstream::app );
   }
   if ( (!out.fail()) && out.is_open() && !writeFirstTime ) {
-	for(int d = 0; d<DIMENSIONS; d++) {
+    for(int d = 0; d<DIMENSIONS; d++) {
       out << Norm[d] << " ";
-	}
-	out << std::endl;
+    }
+    out << std::endl;
   }
 }
 
@@ -498,6 +541,9 @@ void particles::pit::myfunctions::RepresentationChange::ascend(
       tarch::la::Vector<DIMENSIONS,double> l2ErrorNorm = computeL2ErrorNorm( fineGridCell );
       tarch::la::Vector<DIMENSIONS,double> l2Norm = computeL2Norm( fineGridCell );
       std::cout << "ascend: " << l2ErrorNorm << std::endl;
+
+      // Histogram process
+      processHistogram( l2ErrorNorm );
 
       // Save maximal l2ErrorNorm in _globalMaxL2ErrorNorm
       for(int d = 0; d<DIMENSIONS; d++) {
