@@ -1,8 +1,6 @@
 #ifndef PARTICLES_PIT_MYFUNCTIONS_RepresentationChange_H_
 #define PARTICLES_PIT_MYFUNCTIONS_RepresentationChange_H_
 
-#define MUL_FACTOR 10;
-
 #include "tarch/logging/Log.h"
 #include "tarch/la/Vector.h"
 

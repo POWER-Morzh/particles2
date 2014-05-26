@@ -4,6 +4,9 @@
 # Include files
 -include files.mk
 
+MANTISSA ?= 8
+
+
 
 # Set Paths
 # ---------
@@ -61,8 +64,8 @@ SYSTEM_LFLAGS = $(LINK_TBB)    $(LINK_MPI)
 # Settings for the GNU Compiler (Debug Mode)
 # ------------------------------------------
 CC=g++
-COMPILER_CFLAGS=-O0 -pedantic -pedantic-errors -Wall -Werror -Wstrict-aliasing -fstrict-aliasing -ggdb -std=c++0x
-
+COMPILER_CFLAGS=-O0  -Wstrict-aliasing -fstrict-aliasing -ggdb -std=c++0x -DMANTISSA=$(MANTISSA)
+#-pedantic -pedantic-errors -Wall -Werror
 
 # Settings for the GNU Compiler (Release Mode)
 # --------------------------------------------
@@ -108,7 +111,7 @@ OBJECTS=$(SOURCES:.cpp=.o)
 
 
 all: header build
-
+	@echo "value is $(MANTISSA)"
 
 
 files.mk:

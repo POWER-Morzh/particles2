@@ -7,6 +7,8 @@
 #include <string>
 #include "peano/utils/Loop.h"
 
+#define MUL_FACTOR 1
+
 tarch::la::Vector<6, double> particles::pit::myfunctions::RepresentationChange::_histogramData(0);
 
 double particles::pit::myfunctions::RepresentationChange::_globalMaxOffset = 0;
@@ -114,9 +116,9 @@ void particles::pit::myfunctions::RepresentationChange::printParticlesInfo(const
 
     // Compressed offsets of velocities
     std::cout << "---Offsets of velocities compressed---------------------------:" << std::endl;
-    for(int d=0; d<DIMENSIONS; d++) {
-      for (int i=0; i<NumberOfParticles; i++) {
-    	std::cout << std::abs( compressedParticles.at(i).getV()[d] ) << " + ";
+    for (int i=0; i<NumberOfParticles; i++) {
+      for(int d=0; d<DIMENSIONS; d++) {
+    	std::cout << std::abs( compressedParticles.at(i).getV()[d] ) << " ";
       }
       std::cout << std::endl;
     }
@@ -135,6 +137,8 @@ void particles::pit::myfunctions::RepresentationChange::printParticlesInfo(const
 }
 
 void particles::pit::myfunctions::RepresentationChange::leaveCell(particles::pit::Cell& fineGridCell) {
+
+  std::cout <<"!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!" << MANTISSA << std::endl;
 
   const int cellIndex = fineGridCell.getCellIndex();
   const int NumberOfParticles = ParticleHeap::getInstance().getData(cellIndex).size();
@@ -263,7 +267,10 @@ tarch::la::Vector<DIMENSIONS, double> particles::pit::myfunctions::Representatio
 
     for (int i=0; i<NumberOfParticles; i++) {
 	  for(int d=0; d < DIMENSIONS; d++) {
-	    l2ErrorNorm[d] += std::abs( std::abs(currentParticles.at(i)._persistentRecords._v[d]) - meanVelocity[d] - compressedParticles.at(i).getV()[d]);
+	    l2ErrorNorm[d] += std::abs(
+	                               MUL_FACTOR*(std::abs(std::abs(currentParticles.at(i)._persistentRecords._v[d]) - meanVelocity[d]))
+	                               - std::abs(compressedParticles.at(i).getV()[d])
+	                      ) / MUL_FACTOR;
 	  }
     }
     for (int d =0; d<DIMENSIONS; d++) {
@@ -368,16 +375,16 @@ void particles::pit::myfunctions::RepresentationChange::writeInCompressedHeap(
   ParticleCompressedHeap::getInstance().getData(cellIndex).clear();
 
   // absVlosity is used to store asolute values of currentParicle velocity
-  tarch::la::Vector<DIMENSIONS, double> absVelocity(0);
+  tarch::la::Vector<DIMENSIONS, double> absOffset(0);
 
   for (int i = 0; i< NumberOfParticles; i++) {
     particles::pit::records::ParticleCompressedPacked newParticleCompressed;
     newParticleCompressed.setX(  currentParticles[i]._persistentRecords._x - meanCoordinate );
 
     for(int d = 0; d<DIMENSIONS; d++) {
-      absVelocity[d] = std::abs( currentParticles[i]._persistentRecords._v[d] );
+      absOffset[d] = MUL_FACTOR * (std::abs( currentParticles[i]._persistentRecords._v[d] ) - meanVelocity[d]);
     }
-    newParticleCompressed.setV( absVelocity - meanVelocity );
+    newParticleCompressed.setV( absOffset );
     ParticleCompressedHeap::getInstance().getData(cellIndex).push_back(newParticleCompressed);
   }
 
@@ -456,21 +463,21 @@ void particles::pit::myfunctions::RepresentationChange::writeAllInFile() {
 
   static bool writeFirstTime = 1;
   // Write Histogram data
-  writeHistogramData( "histogram1", writeFirstTime);
+  writeHistogramData( "histogram", writeFirstTime);
   // Write globalL2ErrorNorm
-  writeGlobalNorm( "globalL2ErrorNorm.dat1", _globalL2ErrorNorm, writeFirstTime );
+  writeGlobalNorm( "globalL2ErrorNorm.dat", _globalL2ErrorNorm, writeFirstTime );
 
   // Write _globalL2OffsetNorm
-  writeGlobalNorm( "globalL2OffsetNorm.dat1", _globalL2OffsetNorm, writeFirstTime );
+  writeGlobalNorm( "globalL2OffsetNorm.dat", _globalL2OffsetNorm, writeFirstTime );
 
   // Write _globalMaxL2ErrorNorm
-  writeGlobalNorm( "globalMaxL2ErrorNorm.dat1", _globalMaxL2ErrorNorm, writeFirstTime );
+  writeGlobalNorm( "globalMaxL2ErrorNorm.dat", _globalMaxL2ErrorNorm, writeFirstTime );
 
   // Write _globalMaxRelativeError
-  writeGlobalNorm( "globalMaxRelativeError.dat1", _globalMaxRelativeError, writeFirstTime );
+  writeGlobalNorm( "globalMaxRelativeError.dat", _globalMaxRelativeError, writeFirstTime );
 
   // Write _globalMaxOffset
-  writeGlobalNorm( "globalMaxOffset.dat1", _globalMaxOffset, writeFirstTime );
+  writeGlobalNorm( "globalMaxOffset.dat", _globalMaxOffset, writeFirstTime );
   writeFirstTime = 0;
 }
 
