@@ -17,6 +17,10 @@
 #include "particles/pit/records/ParticleCompressed.h"
 
 
+#define MUL_FACTOR 10
+#define N_INTERVALS_HISTOGRAM 21
+
+
 namespace particles {
   namespace pit {
     namespace myfunctions {
@@ -28,8 +32,9 @@ namespace particles {
 
 class particles::pit::myfunctions::RepresentationChange {
 public:
-    static tarch::la::Vector<6, double> _histogramData;
+    static tarch::la::Vector<N_INTERVALS_HISTOGRAM, int> _histogramData;
 
+    static double _global_max_error;
     static double _globalMaxOffset;
     static double _globalMaxRelativeError;
     static double _globalMaxL2ErrorNorm;

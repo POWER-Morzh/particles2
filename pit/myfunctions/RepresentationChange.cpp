@@ -7,10 +7,11 @@
 #include <string>
 #include "peano/utils/Loop.h"
 
-#define MUL_FACTOR 1
 
-tarch::la::Vector<6, double> particles::pit::myfunctions::RepresentationChange::_histogramData(0);
 
+tarch::la::Vector<N_INTERVALS_HISTOGRAM, int> particles::pit::myfunctions::RepresentationChange::_histogramData(0);
+
+double particles::pit::myfunctions::RepresentationChange::_global_max_error = 0;
 double particles::pit::myfunctions::RepresentationChange::_globalMaxOffset = 0;
 double particles::pit::myfunctions::RepresentationChange::_globalMaxRelativeError = 0;
 double particles::pit::myfunctions::RepresentationChange::_globalMaxL2ErrorNorm = 0;
@@ -49,19 +50,41 @@ void particles::pit::myfunctions::RepresentationChange::writeHistogramData( cons
 
 
 void particles::pit::myfunctions::RepresentationChange::processHistogram( const tarch::la::Vector<DIMENSIONS,double>& Norm ) {
+  double bigBound = 0.001, smallBound = 0.000001;
+  double check = smallBound;
+  double oneStep = pow(bigBound/smallBound, 1.0/(N_INTERVALS_HISTOGRAM-3)); // We subtract 3 because two places already reserved
+  //std::cout << "processHistogram(), oneStep=" << oneStep << std::endl;
+  //std::cout << "processHistogram(), n_intervals=" << N_INTERVALS_HISTOGRAM << std::endl;
+
+  // We save the data in increasing order.
+
   for(int d = 0; d<DIMENSIONS; d++) {
-    if(Norm[d] > 0.01) {
-      _histogramData[5] += 1;
-    } else if( Norm[d] > 0.001 ) {
-      _histogramData[4] += 1;
-    } else if( Norm[d] > 0.0001 ) {
-      _histogramData[3] += 1;
-    } else if( Norm[d] > 0.00001 ) {
-      _histogramData[2] += 1;
-    } else if( Norm[d] > 0.000001 ) {
-      _histogramData[1] += 1;
+    check = smallBound;
+
+    if(Norm[d] < smallBound) {
+      _histogramData[0]++;
+    } else if(Norm[d] >= bigBound) {
+      _histogramData[N_INTERVALS_HISTOGRAM - 1]++;
     } else {
-      _histogramData[0] += 1;
+
+      for(int i = 1; i< N_INTERVALS_HISTOGRAM-1; i++) {
+        if(Norm[d] >= check) {
+          check *= oneStep;
+          //std::cout << check << std::endl;
+
+          if(Norm[d] < check) {
+            _histogramData[i]++;
+            break;
+          }
+
+        }
+      }
+
+      if(Norm[d] >= check && Norm[d] <bigBound) {
+        // If we came here it means that we did not save
+        //std::cout << "processHistogram() - ERROR -  we didn't save data about Norm in _histogramData for: " << Norm[d] << std::endl;
+      }
+
     }
   }
 }
@@ -109,7 +132,7 @@ void particles::pit::myfunctions::RepresentationChange::printParticlesInfo(const
     std::cout << "---Offsets of velocities---------------------------:" << std::endl;
     for (int i=0; i<NumberOfParticles; i++) {
       for(int d=0; d<DIMENSIONS; d++) {
-    	std::cout << std::abs( std::abs( currentParticles.at(i)._persistentRecords._v(d) ) - meanVelocity[d] ) << " ";
+    	std::cout << std::abs( currentParticles.at(i)._persistentRecords._v(d)) - meanVelocity[d] << " ";
       }
       std::cout << std::endl;
     }
@@ -118,16 +141,26 @@ void particles::pit::myfunctions::RepresentationChange::printParticlesInfo(const
     std::cout << "---Offsets of velocities compressed---------------------------:" << std::endl;
     for (int i=0; i<NumberOfParticles; i++) {
       for(int d=0; d<DIMENSIONS; d++) {
-    	std::cout << std::abs( compressedParticles.at(i).getV()[d] ) << " ";
+    	std::cout << compressedParticles.at(i).getV()[d] << " ";
       }
       std::cout << std::endl;
     }
 
+    double offset;
     // Error
-    std::cout << "---Relative Errors---------------------------:" << std::endl;
+//    std::cout << "---Relative Errors---------------------------:" << std::endl;
+//    for (int i=0; i<NumberOfParticles; i++) {
+//      for(int d=0; d<DIMENSIONS; d++) {
+//        offset = std::abs(currentParticles.at(i)._persistentRecords._v[d]) - meanVelocity[d];
+//    	std::cout << std::abs( (MUL_FACTOR*offset- compressedParticles.at(i).getV()[d]) / (MUL_FACTOR*offset) ) << " ";
+//      }
+//      std::cout << std::endl;
+//    }
+    std::cout << "---Absolute Errors---------------------------:" << std::endl;
     for (int i=0; i<NumberOfParticles; i++) {
       for(int d=0; d<DIMENSIONS; d++) {
-    	std::cout << std::abs( (currentParticles.at(i)._persistentRecords._v[d] - meanVelocity[d] - compressedParticles.at(i).getV()[d]) / (currentParticles.at(i)._persistentRecords._v[d] - meanVelocity[d]) ) << " ";
+          offset = std::abs(currentParticles.at(i)._persistentRecords._v[d]) - meanVelocity[d];
+          std::cout << std::abs( (MUL_FACTOR*offset - compressedParticles.at(i).getV()[d]) / MUL_FACTOR ) << " ";
       }
       std::cout << std::endl;
     }
@@ -138,10 +171,11 @@ void particles::pit::myfunctions::RepresentationChange::printParticlesInfo(const
 
 void particles::pit::myfunctions::RepresentationChange::leaveCell(particles::pit::Cell& fineGridCell) {
 
-  std::cout <<"!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!" << MANTISSA << std::endl;
+  std::cout <<"leaveCell()!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!" << MANTISSA << std::endl;
 
   const int cellIndex = fineGridCell.getCellIndex();
   const int NumberOfParticles = ParticleHeap::getInstance().getData(cellIndex).size();
+//std::cout << "cellIndex in leaveCell():" << cellIndex << std::endl;
 
   if(NumberOfParticles > 0) {
     const ParticleHeap::HeapEntries& currentParticles = ParticleHeap::getInstance().getData(cellIndex);
@@ -158,10 +192,6 @@ void particles::pit::myfunctions::RepresentationChange::leaveCell(particles::pit
 
     // Write in Heap of compressed Particles
     writeInCompressedHeap(currentParticles, cellIndex, meanVelocity, meanCoordinate);
-
-    // Compute L2-Norm for each axes
-    tarch::la::Vector<DIMENSIONS, double> l2ErrorNorm = computeL2ErrorNorm(fineGridCell);
-    std::cout << "leaveCell: " << l2ErrorNorm << std::endl;
   }
 }
 
@@ -200,13 +230,13 @@ tarch::la::Vector<DIMENSIONS, double> particles::pit::myfunctions::Representatio
     // Compute the mean value of the velocity for each axes
     meanVelocity = computeMeanVelocity(currentParticles, NumberOfParticles);
 
-    double preciseOffset = 0;
+    double precise_offset = 0;
 
     for (int i=0; i<NumberOfParticles; i++) {
 	  for(int d=0; d < DIMENSIONS; d++) {
-	    preciseOffset = currentParticles.at(i)._persistentRecords._v[d] - meanVelocity[d];
+	      precise_offset = std::abs(currentParticles.at(i)._persistentRecords._v[d]) - meanVelocity[d];
 
-	    rmsd[d] += std::pow ( ((preciseOffset - compressedParticles.at(i).getV()[d]) / preciseOffset), 2);
+	    rmsd[d] += std::pow ( ( (MUL_FACTOR*precise_offset - compressedParticles.at(i).getV()[d])/ (MUL_FACTOR*precise_offset) ), 2);
 	  }
     }
     for(int d=0; d < DIMENSIONS; d++) {
@@ -234,14 +264,14 @@ double particles::pit::myfunctions::RepresentationChange::computeMaxRelativeErro
     // Compute the mean value of the velocity for each axes
     meanVelocity = computeMeanVelocity(currentParticles, NumberOfParticles);
 
-    double preciseOffset = 0;
+    double precise_offset = 0;
 
     for (int i=0; i<NumberOfParticles; i++) {
 	  for(int d=0; d < DIMENSIONS; d++) {
-		  preciseOffset = std::abs(currentParticles.at(i)._persistentRecords._v[d]) - meanVelocity[d];
+	      precise_offset = std::abs(std::abs(currentParticles.at(i)._persistentRecords._v[d]) - meanVelocity[d]);
 
-	    if( maxRelativeError <  std::abs( (preciseOffset - compressedParticles.at(i).getV()[d]) / preciseOffset ) ) {
-	      maxRelativeError = std::abs( (preciseOffset - compressedParticles.at(i).getV()[d]) / preciseOffset);
+	    if( maxRelativeError <  std::abs( (MUL_FACTOR*precise_offset - std::abs(compressedParticles.at(i).getV()[d])) / (MUL_FACTOR*precise_offset) ) ) {
+	      maxRelativeError = std::abs( (MUL_FACTOR*precise_offset - std::abs(compressedParticles.at(i).getV()[d])) / (MUL_FACTOR*precise_offset));
 	    }
 	  }
     }
@@ -265,12 +295,11 @@ tarch::la::Vector<DIMENSIONS, double> particles::pit::myfunctions::Representatio
     // Compute the mean value of the velocity for each axes
     meanVelocity = computeMeanVelocity(currentParticles, NumberOfParticles);
 
+    double precise_offset = 0;
     for (int i=0; i<NumberOfParticles; i++) {
 	  for(int d=0; d < DIMENSIONS; d++) {
-	    l2ErrorNorm[d] += std::abs(
-	                               MUL_FACTOR*(std::abs(std::abs(currentParticles.at(i)._persistentRecords._v[d]) - meanVelocity[d]))
-	                               - std::abs(compressedParticles.at(i).getV()[d])
-	                      ) / MUL_FACTOR;
+	    precise_offset = std::abs(currentParticles.at(i)._persistentRecords._v[d]) - meanVelocity[d];
+	    l2ErrorNorm[d] += std::abs(MUL_FACTOR*precise_offset - compressedParticles.at(i).getV()[d]) / MUL_FACTOR;
 	  }
     }
     for (int d =0; d<DIMENSIONS; d++) {
@@ -344,22 +373,26 @@ double particles::pit::myfunctions::RepresentationChange::computeMaxError( const
   const ParticleHeap::HeapEntries& currentParticles = ParticleHeap::getInstance().getData(cellIndex);
   const ParticleCompressedHeap::HeapEntries& compressedParticles = ParticleCompressedHeap::getInstance().getData(cellIndex);
 
-  double maxOffset = 0;
+  double real_error;
+
+  double maxErrorOffset = 0;
   tarch::la::Vector<DIMENSIONS, double> meanVelocity = fineGridCell.getMeanVelocity();
 
   if ( NumberOfParticles > 0 ) {
 
     for (int i=0; i<NumberOfParticles; i++) {
 	  for(int d=0; d < DIMENSIONS; d++) {
-	    if( maxOffset < std::abs(std::abs(currentParticles.at(i)._persistentRecords._v[d]) - meanVelocity[d] - compressedParticles.at(i).getV()[d]) )
-	      maxOffset = std::abs(std::abs(currentParticles.at(i)._persistentRecords._v[d]) - meanVelocity[d] - compressedParticles.at(i).getV()[d]);
+	    real_error = MUL_FACTOR*(std::abs(currentParticles.at(i)._persistentRecords._v[d]) - meanVelocity[d])
+                       - compressedParticles.at(i).getV()[d];
+	    if( maxErrorOffset < std::abs(real_error) / MUL_FACTOR)
+	      maxErrorOffset = std::abs(real_error) / MUL_FACTOR;
 	  }
     }
 
   }
 
 
-  return maxOffset;
+  return maxErrorOffset;
 }
 
 
@@ -394,9 +427,10 @@ void particles::pit::myfunctions::RepresentationChange::writeInCompressedHeap(
 void particles::pit::myfunctions::RepresentationChange::beginIteration() {
   particles::pit::myfunctions::CoordinatesRepresentationChange::beginIteration();
 
-  tarch::la::Vector<6, double> zeroVector6(0);
-  _histogramData = zeroVector6;
+  tarch::la::Vector<N_INTERVALS_HISTOGRAM, int> zeroVector_N_INTERVALS_HISTOGRAM(0);
+  _histogramData = zeroVector_N_INTERVALS_HISTOGRAM;
 
+  _global_max_error = 0;
   _globalMaxOffset = 0;
   _globalMaxRelativeError = 0;
   _globalMaxL2ErrorNorm = 0;
@@ -453,7 +487,7 @@ void particles::pit::myfunctions::RepresentationChange::writeAllInFile() {
   //writeNorm( "RMSDOut", _RMSDOut );
 
   // Write l2ErrorNorm
-  writeNorm( "L2ErrorNorm1", _L2ErrorNormOut );
+  //writeNorm( "L2ErrorNorm", _L2ErrorNormOut );
 
   // Write l2Norm
   //writeNorm( "L2Norm", _L2NormOut );
@@ -463,21 +497,26 @@ void particles::pit::myfunctions::RepresentationChange::writeAllInFile() {
 
   static bool writeFirstTime = 1;
   // Write Histogram data
-  writeHistogramData( "histogram", writeFirstTime);
+  //writeHistogramData( "histogram", writeFirstTime);
+
   // Write globalL2ErrorNorm
   writeGlobalNorm( "globalL2ErrorNorm.dat", _globalL2ErrorNorm, writeFirstTime );
 
   // Write _globalL2OffsetNorm
-  writeGlobalNorm( "globalL2OffsetNorm.dat", _globalL2OffsetNorm, writeFirstTime );
+  //writeGlobalNorm( "globalL2OffsetNorm.dat", _globalL2OffsetNorm, writeFirstTime );
 
   // Write _globalMaxL2ErrorNorm
   writeGlobalNorm( "globalMaxL2ErrorNorm.dat", _globalMaxL2ErrorNorm, writeFirstTime );
 
   // Write _globalMaxRelativeError
-  writeGlobalNorm( "globalMaxRelativeError.dat", _globalMaxRelativeError, writeFirstTime );
+  //writeGlobalNorm( "globalMaxRelativeError.dat", _globalMaxRelativeError, writeFirstTime );
 
   // Write _globalMaxOffset
-  writeGlobalNorm( "globalMaxOffset.dat", _globalMaxOffset, writeFirstTime );
+  //writeGlobalNorm( "globalMaxOffset.dat", _globalMaxOffset, writeFirstTime );
+
+  // Write global max error
+  writeGlobalNorm( "global_max_error.dat", _global_max_error, writeFirstTime );
+
   writeFirstTime = 0;
 }
 
@@ -520,10 +559,10 @@ void particles::pit::myfunctions::RepresentationChange::ascend(
   const peano::grid::VertexEnumerator&          coarseGridVerticesEnumerator,
   particles::pit::Cell&           coarseGridCell
 ) {
-	particles::pit::myfunctions::CoordinatesRepresentationChange::ascend( fineGridCells, fineGridVertices, fineGridVerticesEnumerator, coarseGridVertices, coarseGridVerticesEnumerator, coarseGridCell );
+  particles::pit::myfunctions::CoordinatesRepresentationChange::ascend( fineGridCells, fineGridVertices, fineGridVerticesEnumerator, coarseGridVertices, coarseGridVerticesEnumerator, coarseGridCell );
 
   dfor3(k)
-	particles::pit::Cell fineGridCell = fineGridCells[ fineGridVerticesEnumerator.cell(k) ];
+    particles::pit::Cell fineGridCell = fineGridCells[ fineGridVerticesEnumerator.cell(k) ];
     const tarch::la::Vector<DIMENSIONS,double> cellOffset     = fineGridVerticesEnumerator.getVertexPosition(k);
     const tarch::la::Vector<DIMENSIONS,double> meanVelocity = fineGridCell.getMeanVelocity();
     bool isLeaf = fineGridCell.isLeaf();
@@ -538,6 +577,9 @@ void particles::pit::myfunctions::RepresentationChange::ascend(
         _globalMaxRelativeError = maxRelativeError;
       }
       double maxError = computeMaxError( fineGridCell );
+      if(_global_max_error < maxError) {
+          _global_max_error = maxError;
+      }
       double maxOffset = computeMaxOffset( fineGridCell );
       if(_globalMaxOffset < maxOffset) {
         _globalMaxOffset = maxOffset;
@@ -547,7 +589,7 @@ void particles::pit::myfunctions::RepresentationChange::ascend(
       // Computer L2-Norm
       tarch::la::Vector<DIMENSIONS,double> l2ErrorNorm = computeL2ErrorNorm( fineGridCell );
       tarch::la::Vector<DIMENSIONS,double> l2Norm = computeL2Norm( fineGridCell );
-      std::cout << "ascend: " << l2ErrorNorm << std::endl;
+      std::cout << "ascend() l2ErrorNorm: " << l2ErrorNorm << std::endl;
 
       // Histogram process
       processHistogram( l2ErrorNorm );
@@ -568,7 +610,7 @@ void particles::pit::myfunctions::RepresentationChange::ascend(
 
 
       // Output for checking
-      printParticlesInfo( fineGridCell, "l2Norm", l2Norm );
+      printParticlesInfo( fineGridCell, "l2ErrorNorm", l2ErrorNorm );
 
       _maxRelativeErrorOut << maxRelativeError << " ";
       _maxErrorOut << maxError << " ";

@@ -756,7 +756,7 @@ particles::pit::records::ParticleCompressedPacked::~ParticleCompressedPacked() {
       _v[elementIndex] = tmp & (0xffff >> (8+8-MANTISA));
       exponent = exponent - 1023 + (0xfff >> (MANTISA - 2));
       _v[elementIndex] |= (exponent << MANTISA);
-      _v[elementIndex] |= (tmp >> 4) & 0x8000;
+      _v[elementIndex] |= (tmp >> (MANTISA - 4)) & 0x8000;
    }
    
 }

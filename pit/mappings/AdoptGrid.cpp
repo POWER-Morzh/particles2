@@ -135,6 +135,7 @@ void particles::pit::mappings::AdoptGrid::createCell(
   logTraceInWith4Arguments( "createCell(...)", fineGridCell, fineGridVerticesEnumerator.toString(), coarseGridCell, fineGridPositionOfCell );
 
   const int cellIndex = ParticleHeap::getInstance().createData();
+  ParticleCompressedHeap::getInstance().createData();
   fineGridCell.init(cellIndex);
 
   logTraceOutWith1Argument( "createCell(...)", fineGridCell );
@@ -164,6 +165,7 @@ void particles::pit::mappings::AdoptGrid::destroyCell(
 
   ParticleHeap::getInstance().moveData(coarseCellNumber,fineCellNumber);
   ParticleHeap::getInstance().deleteData(fineCellNumber);
+  ParticleCompressedHeap::getInstance().deleteData(fineCellNumber);
 
   logTraceOutWith1Argument( "destroyCell(...)", fineGridCell );
 }
